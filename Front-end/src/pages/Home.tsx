@@ -53,45 +53,27 @@ const Home: React.FC = () => {
   }, [])
 
     useEffect(() => {
-    const fetchManga = async () => {
-      try {
-        const res = await axios.get("https://api.mangadex.org/manga", {
-          params: {
-            limit: 6,
-            availableTranslatedLanguage: ["ar"]
-          }
-        });
+    const fetchArabicManga = async () => {
+  const res = await axios.get("https://api.mangadex.org/manga", {
+    params: { limit: 20, "availableTranslatedLanguage[]": ["ar"] }
+  });
 
-        const mangas = await Promise.all(
-          res.data.data.map(async (manga) => {
-            const coverRel = manga.relationships.find(
-              (rel) => rel.type === "cover_art"
-            );
+  const mangas = [];
 
-            let coverUrl = "";
-            if (coverRel) {
-              coverUrl = `https://uploads.mangadex.org/covers/${manga.id}/${coverRel.attributes?.fileName}.256.jpg`;
-;
-            }
+  for (const manga of res.data.data) {
+    // جبد الفصول ديال كل مانغا
+    const chaptersRes = await axios.get(`https://api.mangadex.org/chapter`, {
+      params: { manga: manga.id, translatedLanguage: ["ar"], limit: 1 }
+    });
 
-            console.log({
-              id: manga.id,
-              title:
-                manga.attributes.title.ar ||
-                manga.attributes.title.en ||
-                "بدون عنوان",
-              cover: coverUrl
-            });
-          })
-        );
+    if (chaptersRes.data.data.length > 0) {
+      mangas.push(manga);
+    }
+  }
 
-        setMangaList(mangas);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchManga();
+  return mangas;
+};
+    fetchArabicManga().then(setMangaList);
   }, []);
 
   // autoplay

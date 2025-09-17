@@ -1,27 +1,51 @@
-const exress = require('express');
-const app = exress();
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+
+app.use(express.json());
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
 
-app.get('/', (req, res) => {
-    res.send('Wach a jmi!');
+mongoose.connect("mongodb+srv://Parasso:khona@cluster0.m0obokt.mongodb.net/myDatabase?retryWrites=true&w=majority")
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch((err) => {
+        console.error('Error connecting to MongoDB', err);
+    });
+
+const userSchema = new mongoose.Schema({
+    name: String,
+    age: Number,
+    email: String,
 });
 
-app.post('/prs', (req, res) => {
-    const { parasso } = req.body;
-    res.send(`parasso kayn: ${parasso}`);
+const User = mongoose.model('User', userSchema);
+
+// Get all users
+app.get('/prs', async (req, res) => {
+    const prs = await User.find();
+    res.send(prs);
 });
 
-app.put('/prs/:id', (req, res) => {
+// Add new user
+app.post('/prs/new', async (req, res) => {
+    const user = await User.create(req.body);
+    res.send(user);
+});
+
+// Update user
+app.put('/prs/update/:id', async (req, res) => {
     const { id } = req.params;
-    res.send(`data tbdlat ${id}`);
+    const updateUser = await User.findByIdAndUpdate(id, req.body, { new: true });
+    res.send(updateUser);
 });
 
-app.delete('/prs/:id', (req, res) => {
+// Delete user
+app.delete('/prs/delete/:id', async (req, res) => {
     const { id } = req.params;
-    res.send(`data tms7at ${id}`);
+    const deleteUser = await User.findByIdAndDelete(id);
+    res.send(deleteUser);
 });
-
-

@@ -17,7 +17,7 @@ const Browse: React.FC = () => {
   const allGenres = useMemo(() => {
     const genres = new Set<string>();
     mangas.forEach(manga => {
-      manga.genres.forEach(genre => genres.add(genre));
+      manga.categories.forEach(genre => genres.add(genre));
     });
     return Array.from(genres).sort();
   }, [mangas]);
@@ -25,7 +25,7 @@ const Browse: React.FC = () => {
   // Filter mangas
   const filteredMangas = useMemo(() => {
     return mangas.filter(manga => {
-      const matchesGenre = genreFilter === 'all' || manga.genres.includes(genreFilter);
+      const matchesGenre = genreFilter === 'all' || manga.categories.includes(genreFilter);
       const matchesStatus = statusFilter === 'all' || manga.status === statusFilter;
       const matchesType = typeFilter === 'all' || manga.type === typeFilter;
       

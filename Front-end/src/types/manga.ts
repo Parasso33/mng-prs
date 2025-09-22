@@ -4,11 +4,12 @@ export interface Manga {
   titleEn: string;
   author: string;
   status: 'مستمر' | 'مكتمل' | 'متوقف';
-  genres: string[];
+  categories: string[];
   rating: string;
-  description: string;
+  summary: string;
   cover: string;
   chapters: Chapter[];
+  url: string;
   type: 'manga' | 'manhwa' | 'manhua';
 }
 
@@ -26,6 +27,10 @@ export interface Chapter {
   title: string;
   pages: number;
   releaseDate?: string;
+  images: string[];
+  url: string;
+  next: number;
+  prev: number;
 }
 
 export interface Language {

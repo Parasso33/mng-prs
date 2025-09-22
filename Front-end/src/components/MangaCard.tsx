@@ -1,112 +1,84 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { useApp } from '@/contexts/AppContext';
+import React, { useState, useEffect } from 'react';
+import { Heart } from 'lucide-react';
 import type { Manga } from '@/types/manga';
 
-interface MangaCardProps {
-  manga: Manga;
-  showLatestChapter?: boolean;
-}
-
-const SESSION_USER_KEY = 'mp_user';
+const STORAGE_KEY = 'mp_user';
 const GLOBAL_FAV_KEY = 'mp_favorites';
 
-const getFavKey = (): string => {
+const getFavKeyForUser = (): string => {
   try {
-    const raw = sessionStorage.getItem(SESSION_USER_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) {
       const u = JSON.parse(raw);
       if (u?.email) return `mp_favs_${u.email}`;
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
   return GLOBAL_FAV_KEY;
 };
 
-const readFavs = (): string[] => {
+const readFavIds = (): string[] => {
   try {
-    const key = getFavKey();
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(getFavKeyForUser());
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 };
 
-const writeFavs = (ids: string[]) => {
+const writeFavIds = (ids: string[]) => {
   try {
-    const key = getFavKey();
-    localStorage.setItem(key, JSON.stringify(ids));
+    localStorage.setItem(getFavKeyForUser(), JSON.stringify(ids));
     window.dispatchEvent(new CustomEvent('mp:favs:changed'));
   } catch {}
 };
 
-const MangaCard: React.FC<MangaCardProps> = ({ manga, showLatestChapter = false }) => {
-  const latestChapter = manga.chapters?.[0] ?? null;
-  const [isFav, setIsFav] = useState<boolean>(false);
-  const { toast } = useToast();
-  const { isLoggedIn } = useApp();
-  const userLoggedIn = Boolean(isLoggedIn || sessionStorage.getItem(SESSION_USER_KEY));
+const MangaCard: React.FC<{ manga: Manga }> = ({ manga }) => {
+  const [isFav, setIsFav] = useState(false);
+  const [userLogged, setUserLogged] = useState(false);
 
   useEffect(() => {
-    const favs = readFavs();
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    setUserLogged(Boolean(raw));
+
+    const favs = readFavIds();
     setIsFav(favs.includes(manga.id));
   }, [manga.id]);
 
-  const toggleFav = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!manga.id) return;
-
-    const favs = readFavs();
-    const exists = favs.includes(manga.id);
-    const next = exists ? favs.filter((id) => id !== manga.id) : [...favs, manga.id];
-    writeFavs(next);
-    setIsFav(!exists);
-
-    if (!exists) {
-      toast?.({ title: 'تمت الإضافة إلى المفضلة !' });
-    } else {
-      toast?.({ title: 'تمت الإزالة من المفضلة' });
-    }
+  const toggleFavorite = () => {
+    if (!userLogged) return;
+    const favs = readFavIds();
+    const next = isFav ? favs.filter((id) => id !== manga.id) : [...favs, manga.id];
+    writeFavIds(next);
+    setIsFav(!isFav);
   };
 
   return (
-    <Link to={manga.id} className="block">
- <div className="manga-card group h-[400px] flex flex-col">
-  <div className="relative overflow-hidden h-64">
-    <img
-  src={manga.cover || '/images/placeholder.jpg'}
-  alt={manga.title}
-  className="w-full h-full object-cover manga-transition group-hover:scale-105"
-/>
+    <div className="relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
+      {/* Cover image */}
+      <img
+        src={manga.cover || '/images/placeholder.jpg'}
+        alt={manga.title}
+        className="w-full h-64 object-cover"
+      />
 
-  </div>
-
-  <div className="p-4 flex-1 flex flex-col justify-between">
-    <h3 className="font-bold text-lg mb-2 truncate">{manga.title}</h3>
-    <div className="flex items-center justify-between text-sm text-muted-foreground">
-      <span>{manga.author}</span>
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-        manga.status === 'مستمر'
-          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          : manga.status === 'مكتمل'
-          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-      }`}>{manga.status}</span>
-    </div>
-    {showLatestChapter && latestChapter && (
-      <div className="mt-2 text-sm text-muted-foreground truncate">
-        الفصل {latestChapter.number}: {latestChapter.title}
+      {/* Overlay for hover */}
+      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition duration-300 flex items-end p-2">
+        <span className="text-white font-semibold text-sm">{manga.title}</span>
       </div>
-    )}
-  </div>
-</div>
 
-    </Link>
+      {/* Favorite button */}
+      {userLogged && (
+        <button
+          onClick={toggleFavorite}
+          className={`absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full shadow transition ${
+            isFav ? 'bg-red-500 text-white' : 'bg-black/40 text-white hover:bg-black/60'
+          }`}
+          title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+        >
+          <Heart className={isFav ? 'fill-current' : ''} />
+        </button>
+      )}
+    </div>
   );
 };
 

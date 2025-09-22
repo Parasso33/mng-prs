@@ -5,6 +5,7 @@ import MangaCard from '@/components/MangaCard';
 import { mangaData } from '@/data/manga';
 import type { Manga } from '@/types/manga';
 import type { HistoryItem } from '@/types/manga';
+import FavButton from '@/components/ui/FavButton';
 
 const STORAGE_KEY = 'mp_user';
 const GLOBAL_FAV_KEY = 'mp_favorites';
@@ -21,6 +22,8 @@ const getFavKeyForUser = (): string => {
   } catch { }
   return GLOBAL_FAV_KEY;
 };
+
+
 
 const readFavIds = (): string[] => {
   try {
@@ -75,11 +78,25 @@ const Profile: React.FC = () => {
     return () => window.removeEventListener('mp:favs:changed', handler as EventListener);
   }, [loadFavs, loadUser]);
 
-  const allMangas = useMemo(() => Object.values(mangaData) as Manga[], []);
-  const favMangas = useMemo(
-    () => favIds.map((id) => allMangas.find((m) => m.id === id)).filter(Boolean) as Manga[],
-    [favIds, allMangas]
-  );
+ const [allMangas, setAllMangas] = useState<Manga[]>([]);
+const [favMangas, setFavMangas] = useState<Manga[]>([]);
+
+useEffect(() => {
+  // اجمع المانغا من static + Home API
+  setAllMangas(Object.values(mangaData) as Manga[]);
+
+  // إذا عندك fetch API سابق فـ Home، ممكن تمررها ل Profile
+}, []);
+
+useEffect(() => {
+  const favs = readFavIds();
+  const favsFound = favs
+    .map((id) => allMangas.find((m) => m.id === id))
+    .filter(Boolean) as Manga[];
+  setFavMangas(favsFound);
+}, [allMangas, favIds]);
+
+
 
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>(() => {
   try {
@@ -168,18 +185,14 @@ const clearHistory = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-            {favMangas.map((m) => (
-              <div key={m.id} className="relative">
-                <MangaCard manga={m} />
-                <button
-                  onClick={() => removeFavorite(m.id)}
-                  className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 focus:outline-none"
-                  title="Remove from favorites"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+           {favMangas.map((m) => (
+  <div key={m.id} className="relative">
+    <MangaCard manga={m} />
+    <div className="absolute top-3 right-3 z-20">
+      <FavButton mangaId={m.id} />
+    </div>
+  </div>
+))}
           </div>
         );
   case 'history':

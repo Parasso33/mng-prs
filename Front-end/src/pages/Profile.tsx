@@ -7,6 +7,7 @@ import type { Manga } from '@/types/manga';
 import type { HistoryItem } from '@/types/manga';
 import FavButton from '@/components/ui/FavButton';
 
+
 const STORAGE_KEY = 'mp_user';
 const GLOBAL_FAV_KEY = 'mp_favorites';
 const PROFILE_IMAGE_KEY = 'mp_profile_image';

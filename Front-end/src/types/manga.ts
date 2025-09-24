@@ -2,8 +2,9 @@ export interface Manga {
   id: string;
   title: string;
   titleEn: string;
-  author: string;
-  status: 'مستمر' | 'مكتمل' | 'متوقف';
+  authors: string;
+  artists: string[];
+  status: 'Ongoing' | 'Completed' | 'متوقف';
   categories: string[];
   rating: string;
   description: string;

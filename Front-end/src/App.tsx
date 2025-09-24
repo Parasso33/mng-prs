@@ -38,7 +38,7 @@ const App = () => (
                   <Route path="/latest" element={<Latest />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/manga/:id" element={<MangaDetails />} />
-                  <Route path="/read/:id/:chapterNumber" element={<Reader />} />
+                  <Route path="/reader/:mangaId/:chapterId" element={<Reader />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

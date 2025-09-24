@@ -1,69 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-// نفس الخدمة بحال MangaDetails: دالة كتجيب المانغا من API
-const fetchManga = async (id: string) => {
-  const res = await fetch(`/api/manga-proxy?id=${id}`);
-  if (!res.ok) throw new Error('فشل تحميل البيانات');
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'لا توجد بيانات');
-  return json.data;
-};
-
-const Reader: React.FC = () => {
-  const { id, chapterNumber } = useParams<{ id: string; chapterNumber: string }>();
-  const [manga, setManga] = useState<any>(null);
-  const [chapter, setChapter] = useState<any>(null);
+const Reader = () => {
+  const { mangaId, chapterId } = useParams<{ mangaId: string; chapterId: string }>();
+  const [pages, setPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || !chapterNumber) return;
-    setLoading(true);
+    const fetchPages = async () => {
+      try {
+        // API Mangadex يجيب صفحات الفصل
+        const res = await axios.get(`https://api.mangadex.org/at-home/server/${chapterId}`);
+        const baseUrl = res.data.baseUrl;
+        const hash = res.data.chapter.hash;
+        const data = res.data.chapter.data;
 
-    fetchManga(id)
-      .then((data) => {
-        setManga(data);
-        const ch = data.chapters.find(
-          (c: any) => c.number?.toString() === chapterNumber
+        const pageUrls = data.map(
+          (fileName: string) => `${baseUrl}/data/${hash}/${fileName}`
         );
-        setChapter(ch || null);
-        setError(null);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [id, chapterNumber]);
 
-  if (loading) return <div>جاري التحميل...</div>;
-  if (error) return <div>خطأ: {error}</div>;
-  if (!chapter) return <div>الفصل غير موجود</div>;
+        setPages(pageUrls);
+      } catch (err) {
+        console.error("خطأ فجلب الصفحات:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (chapterId) fetchPages();
+  }, [chapterId]);
+
+  if (loading) return <p className="p-4">⏳ جارٍ تحميل الفصل...</p>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1>
-        الفصل {chapter.number}: {chapter.title}
-      </h1>
-      {chapter.pages && <p>عدد الصفحات: {chapter.pages}</p>}
-
-      {/* Navigation */}
-      <div className="flex gap-2 mt-4">
-        {chapter.number > 1 && (
-          <Link
-            to={`/read/${id}/${chapter.number - 1}`}
-            className="px-2 py-1 bg-blue-500 text-white rounded"
-          >
-            السابق
-          </Link>
-        )}
-        {manga.chapters && chapter.number < manga.chapters.length && (
-          <Link
-            to={`/read/${id}/${chapter.number + 1}`}
-            className="px-2 py-1 bg-blue-500 text-white rounded"
-          >
-            التالي
-          </Link>
-        )}
-      </div>
+    <div className="p-4 flex flex-col items-center">
+      <h1 className="text-xl font-bold mb-4">📖 قارئ الفصل</h1>
+      {pages.length > 0 ? (
+        pages.map((url, i) => (
+          <img
+            key={i}
+            src={url}
+            alt={`page-${i + 1}`}
+            className="mb-4 w-full max-w-3xl rounded shadow"
+          />
+        ))
+      ) : (
+        <p>ما كايناش صفحات متاحة لهذا الفصل 🌚</p>
+      )}
     </div>
   );
 };

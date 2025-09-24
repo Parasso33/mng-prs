@@ -6,7 +6,7 @@ export interface Manga {
   status: 'مستمر' | 'مكتمل' | 'متوقف';
   categories: string[];
   rating: string;
-  summary: string;
+  description: string;
   cover: string;
   chapters: Chapter[];
   url: string;

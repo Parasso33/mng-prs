@@ -25,7 +25,7 @@ const Latest: React.FC = () => {
           <MangaCard 
             key={manga.id} 
             manga={manga} 
-            showLatestChapter={true}
+            
           />
         ))}
       </div>

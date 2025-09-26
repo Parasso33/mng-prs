@@ -14,12 +14,17 @@ const Reader: React.FC = () => {
   const [pages, setPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [prevChapterId, setPrevChapterId] = useState<string | null>(null);
+  const [nextChapterId, setNextChapterId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPages = async () => {
       try {
         setLoading(true);
         setError(null);
+        setPages([]);
+        // Scroll to top when changing chapters
+        try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0, 0); }
 
         const res = await axios.get(`https://api.mangadex.org/at-home/server/${chapterId}`);
         const baseUrl = res.data.baseUrl;
@@ -42,16 +47,123 @@ const Reader: React.FC = () => {
     if (chapterId) fetchPages();
   }, [chapterId]);
 
+  // Fetch manga feed to determine previous/next chapter IDs
+  useEffect(() => {
+    const fetchChapterNav = async () => {
+      try {
+        if (!mangaId || !chapterId) return;
+
+        // Paginate through the feed (in ascending order) until we find the current chapter
+        const pageSize = 100;
+        let offset = 0;
+        let total = Infinity;
+        type Chap = { id: string; chapterNum: number | null; createdAt: string };
+        let allChapters: Chap[] = [];
+        let foundIndex: number = -1;
+        let safetyCounter = 0;
+        const seen = new Set<string>();
+
+        while (offset < total && safetyCounter < 20 && foundIndex === -1) { // cap ~2000 items
+          const res = await axios.get(`https://api.mangadex.org/manga/${mangaId}/feed`, {
+            params: {
+              limit: pageSize,
+              offset,
+              'order[createdAt]': 'asc',
+              contentRating: ['safe', 'suggestive', 'erotica'],
+            },
+          });
+
+          const items: Array<{ id: string; attributes: { chapter: string | null; createdAt: string } } & any> = res.data?.data || [];
+          total = typeof res.data?.total === 'number' ? res.data.total : items.length; // fallback
+          for (const item of items) {
+            if (!seen.has(item.id)) {
+              seen.add(item.id);
+              const chStr = item.attributes?.chapter ?? null;
+              const parsed = chStr !== null && chStr !== '' && !Number.isNaN(Number(chStr)) ? Number(chStr) : null;
+              allChapters.push({ id: item.id, chapterNum: parsed, createdAt: item.attributes?.createdAt ?? '' });
+            }
+          }
+
+          offset += pageSize;
+          safetyCounter += 1;
+        }
+
+        // Group by distinct chapter numbers (to avoid navigating between different versions of the same chapter)
+        type ChapterGroup = { key: string; chapterNum: number | null; items: Chap[] };
+        const groupsMap = new Map<string, ChapterGroup>();
+        for (const chap of allChapters) {
+          const key = chap.chapterNum !== null ? `num:${chap.chapterNum}` : `null:${chap.createdAt}`; // nulls treated uniquely by time
+          if (!groupsMap.has(key)) {
+            groupsMap.set(key, { key, chapterNum: chap.chapterNum, items: [] });
+          }
+          groupsMap.get(key)!.items.push(chap);
+        }
+
+        // Sort items within groups by createdAt
+        for (const g of groupsMap.values()) {
+          g.items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        }
+
+        // Build ordered groups: numeric chapters ascending, then null chapters by createdAt of their first item
+        const groups = Array.from(groupsMap.values()).sort((a, b) => {
+          if (a.chapterNum !== null && b.chapterNum !== null) {
+            return a.chapterNum - b.chapterNum;
+          }
+          if (a.chapterNum !== null) return -1;
+          if (b.chapterNum !== null) return 1;
+          return a.items[0].createdAt.localeCompare(b.items[0].createdAt);
+        });
+
+        // Find the group that contains the current chapter id
+        const currentGroupIndex = groups.findIndex(g => g.items.some(it => it.id === chapterId));
+
+        if (currentGroupIndex !== -1) {
+          const prevGroup = currentGroupIndex > 0 ? groups[currentGroupIndex - 1] : null;
+          const nextGroup = currentGroupIndex < groups.length - 1 ? groups[currentGroupIndex + 1] : null;
+
+          // Choose a representative id from each neighboring group (first item by createdAt)
+          const prevId = prevGroup ? prevGroup.items[0].id : null;
+          const nextId = nextGroup ? nextGroup.items[0].id : null;
+
+          setPrevChapterId(prevId);
+          setNextChapterId(nextId);
+          console.debug('[Reader] Chapter neighbors (by chapter number groups)', {
+            chapterId,
+            prev: prevId,
+            next: nextId,
+            groupsCount: groups.length,
+          });
+        } else {
+          console.warn('[Reader] Current chapter not found in grouped list', { chapterId, groups: groups.length });
+          setPrevChapterId(null);
+          setNextChapterId(null);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch chapter navigation', e);
+        setPrevChapterId(null);
+        setNextChapterId(null);
+      }
+    };
+
+    fetchChapterNav();
+  }, [mangaId, chapterId]);
+
   const handleNextChapter = () => {
-    navigate(`/read/${mangaId}/nextChapter.id`);
+    if (mangaId && nextChapterId && nextChapterId !== chapterId) {
+      console.debug('[Reader] Navigate next', { mangaId, nextChapterId });
+      navigate(`/reader/${mangaId}/${nextChapterId}`);
+    }
   };
 
   const handlePreviousChapter = () => {
-    navigate(`/read/${mangaId}/previousChapter.id`);
+    if (mangaId && prevChapterId && prevChapterId !== chapterId) {
+      console.debug('[Reader] Navigate prev', { mangaId, prevChapterId });
+      navigate(`/reader/${mangaId}/${prevChapterId}`);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div key={chapterId} className="max-w-4xl mx-auto px-4 py-8">
       {/* Reader Controls */}
       <div className="bg-card p-6 rounded-lg shadow-lg mb-8 animate-fade-in">
         <div className="flex flex-col md:flex-row justify-around items-center gap-4">
@@ -60,6 +172,7 @@ const Reader: React.FC = () => {
               variant="outline"
               onClick={handlePreviousChapter}
               className="min-w-[150px]"
+              disabled={!prevChapterId}
             >
               <FaArrowRight />
             </Button>
@@ -74,6 +187,7 @@ const Reader: React.FC = () => {
               variant="outline"
               onClick={handleNextChapter}
               className="min-w-[150px]"
+              disabled={!nextChapterId}
             >
               <FaArrowLeft />
             </Button>
@@ -107,6 +221,7 @@ const Reader: React.FC = () => {
             variant="outline"
             onClick={handlePreviousChapter}
             className="min-w-[150px]"
+            disabled={!prevChapterId}
           >
             <FaArrowRight />
           </Button>
@@ -121,6 +236,7 @@ const Reader: React.FC = () => {
             variant="outline"
             onClick={handleNextChapter}
             className="min-w-[150px]"
+            disabled={!nextChapterId}
           >
             <FaArrowLeft />
           </Button>
@@ -131,3 +247,4 @@ const Reader: React.FC = () => {
 };
 
 export default Reader;
+

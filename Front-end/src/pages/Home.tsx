@@ -59,11 +59,6 @@ const Home: React.FC = () => {
               id: manga.id,
               title: manga.attributes.title['ar'] || manga.attributes.title['en'] || 'No Title',
               titleEn: manga.attributes.title['en'] || '',
-<<<<<<< HEAD
-              authors: manga.attributes?.authors || 'Unknown',
-=======
-              authors: manga.attributes?.author || 'Unknown',
->>>>>>> e4f42c3609e803bf8f19ff4fa13844b8a85221f1
               status: manga.attributes?.status === 'ongoing' ? 'مستمر' : manga.attributes?.status === 'completed' ? 'مكتمل' : 'متوقف',
               categories: manga.attributes?.tags?.map((t: any) => t.attributes.name['ar'] || t.attributes.name['en']) || [],
               rating: manga.attributes?.rating || 'N/A',

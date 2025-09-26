@@ -195,7 +195,7 @@ const Login: React.FC = () => {
                       <img src={m.cover} alt={m.title} className="w-12 h-16 object-cover rounded" loading="lazy" />
                       <div className="flex-1">
                         <div className="text-sm font-medium leading-tight line-clamp-2">{m.title}</div>
-                        <div className="text-xs text-muted-foreground">{m.author}</div>
+                        <div className="text-xs text-muted-foreground">{m.authors}</div>
                       </div>
                     </div>
                   ))}

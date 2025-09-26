@@ -30,7 +30,7 @@ const Home: React.FC = () => {
     const fetchMangasWithCovers = async () => {
       try {
         const res = await axios.get('https://api.mangadex.org/manga', {
-          params: { limit: 50, 'availableTranslatedLanguage[]': ['ar'] },
+          params: { limit: 20, 'availableTranslatedLanguage[]': ['ar'] },
         });
 
         const mangas: Manga[] = await Promise.all(
@@ -59,11 +59,11 @@ const Home: React.FC = () => {
               id: manga.id,
               title: manga.attributes.title['ar'] || manga.attributes.title['en'] || 'No Title',
               titleEn: manga.attributes.title['en'] || '',
-              author: manga.attributes?.author || 'Unknown',
+              authors: manga.attributes?.author || 'Unknown',
               status: manga.attributes?.status === 'ongoing' ? 'مستمر' : manga.attributes?.status === 'completed' ? 'مكتمل' : 'متوقف',
               categories: manga.attributes?.tags?.map((t: any) => t.attributes.name['ar'] || t.attributes.name['en']) || [],
               rating: manga.attributes?.rating || 'N/A',
-              summary: manga.attributes?.description?.['ar'] || manga.attributes?.description?.['en'] || '',
+              description: manga.attributes?.description?.['ar'] || manga.attributes?.description?.['en'] || '',
               cover,
               chapters,
               url: `/manga/${manga.id}`,

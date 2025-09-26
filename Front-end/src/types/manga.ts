@@ -79,4 +79,5 @@ export interface Translation {
   manga: string;
   manhwa: string;
   manhua: string;
+  loading: string;
 }

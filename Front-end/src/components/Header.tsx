@@ -8,7 +8,7 @@ import { Menu, Search } from 'lucide-react';
 import { User } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { translation, language, toggleLanguage, toggleTheme, theme, isLoggedIn } = useApp();
+  const { translation, language, toggleTheme, theme, isLoggedIn } = useApp();
   const location = useLocation();
   const { profileImage } = useProfile();
   const userRaw = sessionStorage.getItem('mp_user');

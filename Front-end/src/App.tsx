@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
 import { ProfileProvider } from "@/contexts/ProfileContext"; //  import ProfileProvider
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
@@ -18,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

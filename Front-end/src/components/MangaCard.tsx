@@ -133,11 +133,20 @@ const MangaCard: React.FC<MangaCardProps> = ({ manga, showLatestChapter = false 
           </span>
         </div>
 
+<<<<<<< HEAD
         {showLatestChapter && latestChapter && (
           <div className="mt-2 text-sm text-muted-foreground line-clamp-1">
             الفصل {latestChapter.number}: {latestChapter.title}
           </div>
         )}
+=======
+        {showLatestChapter && manga.chapters?.[0] && (
+  <div className="mt-2 text-sm text-muted-foreground">
+    الفصل {manga.chapters[0].number}: {manga.chapters[0].title}
+  </div>
+)}
+
+>>>>>>> e4f42c3609e803bf8f19ff4fa13844b8a85221f1
       </div>
     </div>
   </div>

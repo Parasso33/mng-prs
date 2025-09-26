@@ -9,10 +9,11 @@ const Latest: React.FC = () => {
   
   // Sort by latest chapter (simple implementation - by first chapter number)
   const latestMangas = [...mangas].sort((a, b) => {
-    const latestA = a.chapters[0]?.number || 0;
-    const latestB = b.chapters[0]?.number || 0;
-    return latestB - latestA;
-  });
+  const latestA = a.chapters?.[0]?.number || 0;
+  const latestB = b.chapters?.[0]?.number || 0;
+  return latestB - latestA;
+});
+
 
   return (
     <div className="container mx-auto px-4 py-8">
